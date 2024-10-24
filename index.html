@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HELP ME!!!!</title> <!-- Updated Title -->
+    <title>Webcam Capture with Image Upload</title>
     <style>
         body {
             margin: 0;
@@ -104,7 +104,6 @@
                 .then(images => {
                     gallery.style.display = 'block';  // Show the gallery
 
-                    gallery.innerHTML = ''; // Clear any existing images in the gallery
                     images.forEach(imageData => {
                         const img = document.createElement('img');
                         img.src = imageData;  // Each image is base64 from the server
